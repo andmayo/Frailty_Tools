@@ -14,7 +14,8 @@ knitr::opts_chunk$set(echo = T, message = F, warning = F)
 
 ## Total Sample 
 ```{r, echo=FALSE}
-Data <- read_csv("C:/Users/andre/OneDrive/Documents/Documents/PhD Degree/Projects/Comparing Frailty Tools/Frailty_Tools_Sept10_FRAILSCALE.csv")
+Data <- read_csv("C:/Users/andre/OneDrive/Documents/Documents/PhD Degree/Projects/Comparing Frailty Tools/Frailty_Tools/FrailtyTools.csv")
+write.csv(Data,"C:/Users/andre/OneDrive/Documents/Documents/PhD Degree/Projects/Comparing Frailty Tools/Frailty_Tools/FrailtyTools.csv", row.names = FALSE)
 datatable(Data)
 ```
 
@@ -22,10 +23,9 @@ datatable(Data)
 Phenotype Level 4 was combined with Level 3 as there was only 0.04% of people with Phenoype = 4
 SOF Index 2 & 3 were combined as Level 3 had 0.63 % of people 
 FRAIL SCALE 3, 4, 5 were combined: 3 (3.9%), 4 (0.6%), 5 (0.07%)
-```{r}
+```{r, echo= FALSE}
 options(qwraps2_markup = 'markdown') # default is latex
-Data$EDUCATION [is.na(Data$EDUCATION)] <- "Missing"
-Data$FRAIL_Scale [(Data$FRAIL_Scale)== 4] <- 3 # There was only
+
 
 GC_Data <-
   list("Age" =
@@ -80,7 +80,5 @@ GC_Data <-
               "mean (sd):" = ~ qwraps2::mean_sd(TotalMVPA, denote_sd = "paren"))
        )
 summary_table(Data, GC_Data) 
-Data %>% 
-  count (FRAIL_Scale)
 ```
 
