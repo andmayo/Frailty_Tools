@@ -4,29 +4,83 @@ author: "Andrea"
 date: "22/10/2021"
 output: html_document
 ---
+# Intro 
+This document explores how physical activity estimates differ based on which frailty tool is used 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-
-
+pacman::p_load(dplyr, tidyr, readr, ggplot2, DT, qwraps2)
+knitr::opts_chunk$set(echo = T, message = F, warning = F)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+## Total Sample 
+```{r, echo=FALSE}
+Data <- read_csv("C:/Users/andre/OneDrive/Documents/Documents/PhD Degree/Projects/Comparing Frailty Tools/Frailty_Tools_Sept10_FRAILSCALE.csv")
+datatable(Data)
 ```
 
-## Including Plots
+# General Characteristics
+Phenotype Level 4 was combined with Level 3 as there was only 0.04% of people with Phenoype = 4
+SOF Index 2 & 3 were combined as Level 3 had 0.63 % of people 
+FRAIL SCALE 3, 4, 5 were combined: 3 (3.9%), 4 (0.6%), 5 (0.07%)
+```{r}
+options(qwraps2_markup = 'markdown') # default is latex
+Data$EDUCATION [is.na(Data$EDUCATION)] <- "Missing"
+Data$FRAIL_Scale [(Data$FRAIL_Scale)== 4] <- 3 # There was only
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-
+GC_Data <-
+  list("Age" =
+         list("min:"       = ~ min(AGE),
+              "max:"       = ~ max(AGE),
+              "mean (sd):" = ~ qwraps2::mean_sd(AGE, denote_sd = "paren")),
+       "Sex" = 
+         list ("Female" = ~ qwraps2:: n_perc(GENDER == "Female"), 
+               "Male" = ~ qwraps2::n_perc (GENDER == "Male")), 
+       "Race"= 
+         list ("Non-Hispanic White" = ~ qwraps2::n_perc(RACE == "Non-Hispanic White"), 
+               "Non-Hispanic Black" = ~ qwraps2::n_perc(RACE == "Non-Hispanic Black"), 
+               "Mexican American" =  ~ qwraps2::n_perc(RACE == "Mexican American"), 
+               "Other Hispanic" = ~ qwraps2:: n_perc(RACE == "Other Hispanic"),
+               "Other Race" = ~ qwraps2::n_perc(RACE == "Other Race")),
+       "Education"=
+         list ("Less than 9th Grade"= ~ qwraps2::n_perc (EDUCATION == "Less than 9th"),
+               "9th-11th Grade"= ~ qwraps2::n_perc (EDUCATION == "9-11th grade"), 
+               "Highschool" = ~ qwraps2::n_perc (EDUCATION == "Highschool Grad"), 
+               "Some College"= ~ qwraps2::n_perc (EDUCATION == "Some College"), 
+               "College or Above"= ~ qwraps2::n_perc (EDUCATION == "College grad or above"), 
+               "Missing" = ~ qwraps2::n_perc(EDUCATION == "Missing")), 
+       "Marital Status" = 
+         list ("Married" = ~ qwraps2::n_perc (MARITAL_STATUS == "Married"), 
+               "Living with Partner" = ~ qwraps2::n_perc(MARITAL_STATUS== "Living with Partner"), 
+               "Divorced" = ~ qwraps2::n_perc (MARITAL_STATUS == "Divorced"), 
+               "Separated" = ~ qwraps2::n_perc (MARITAL_STATUS == "Separated"), 
+               "Never Married" = ~ qwraps2::n_perc (MARITAL_STATUS == "Never Married"), 
+               "Widowed" = ~ qwraps2::n_perc (MARITAL_STATUS == "Widowed"), 
+               "Missing" = ~ qwraps2::n_perc (MARITAL_STATUS == "Missing")),
+       "Frailty Phenotype" = 
+         list ("0"= ~ qwraps2::n_perc (Phenotype == 0), 
+               "1"= ~ qwraps2::n_perc (Phenotype == 1), 
+               "2"= ~ qwraps2::n_perc (Phenotype == 2), 
+               "3"= ~ qwraps2::n_perc (Phenotype == 3)), 
+       "SOF Index" =
+         list ("0" = ~ qwraps2::n_perc (SOF == 0), 
+               "1" = ~ qwraps2::n_perc (SOF == 1),
+               "2" = ~ qwraps2::n_perc (SOF == 2)), 
+       "FRAIL Scale" = 
+         list ("0" = ~ qwraps2::n_perc (FRAIL_Scale == 0), 
+               "1" = ~ qwraps2::n_perc (FRAIL_Scale == 1), 
+               "2"= ~ qwraps2::n_perc (FRAIL_Scale == 2), 
+               "3"= ~ qwraps2::n_perc (FRAIL_Scale == 3)), 
+       "Frailty Index"= 
+         list ("min:"       = ~ min(FI),
+              "max:"       = ~ max(FI),
+              "mean (sd):" = ~ qwraps2::mean_sd(FI, denote_sd = "paren")), 
+       "Time Spent in Moderate to Vigorous Physical Activity"= 
+         list ("min:"       = ~ min(TotalMVPA),
+              "max:"       = ~ max(TotalMVPA),
+              "mean (sd):" = ~ qwraps2::mean_sd(TotalMVPA, denote_sd = "paren"))
+       )
+summary_table(Data, GC_Data) 
+Data %>% 
+  count (FRAIL_Scale)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
