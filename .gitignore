@@ -1,0 +1,7 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+git config --global user.name "Andrea Mayo"
+git config --global user.email "andrealorenamayo@gmail.com"
