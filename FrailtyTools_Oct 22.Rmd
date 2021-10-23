@@ -9,18 +9,173 @@ This document explores how physical activity estimates differ based on which fra
 
 ```{r setup, include=FALSE}
 
-pacman::p_load(dplyr, tidyr, readr, ggplot2, DT, qwraps2)
+pacman::p_load(dplyr, tidyr, readr, ggplot2, DT, qwraps2, kableExtra, broom)
 knitr::opts_chunk$set(echo = T, message = F, warning = F)
 ```
 
-#Total Sample 
+# Total Sample
 ```{r, echo=FALSE}
 Data <- read_csv("C:/Users/andre/OneDrive/Documents/Documents/PhD Degree/Projects/Comparing Frailty Tools/Frailty_Tools/FrailtyTools.csv")
 write.csv(Data,"C:/Users/andre/OneDrive/Documents/Documents/PhD Degree/Projects/Comparing Frailty Tools/Frailty_Tools/FrailtyTools.csv", row.names = FALSE)
 datatable(Data)
 ```
 
-##General Characteristics
+# Describe Differences between NHANES Frailty Tools and Original Tool
+## Frailty Phenotype
+```{r, echo = FALSE}
+text_Phenotype <- data.frame (
+  Phenotype =  c ("Exhaustion", "Low Activity", "Weakness", "Low Body Weight"), 
+  Original = c ("Self-reported exhaustion", 
+                "The slowest 20% of the population was defined as baseline, based on time to walk 15 feet, adjusting for gender and standing height", 
+                "Lowest 20% (by gender, body mass index)", 
+                "> 10 lbs lost unintentionally in prior year"), 
+  NHANES = c ("Some difficulty, much difficulty, or unable to do when responding to: difficulty walking from one room to the other on the same level.", 
+              "Responded less active when asked: compared with most men/women your age, would you say that you are more active, less active, or about the same?", 
+              "Some difficulty, much difficulty, or unable to do when responding to: difficulty lifting or carrying something as heavy as 10 pounds [like a sack of potatoes or rice]?", 
+              "≤ 18.5 kg/m2 ")
+)
+
+kbl(text_Phenotype) %>%
+  kable_paper(full_width = F) %>%
+  column_spec(1, bold = T, border_right = T) %>%
+  column_spec(2, width = "30em") %>% 
+  column_spec(3, width = "30cm")
+```
+
+## SOF Index 
+
+```{r, echo = FALSE}
+text_SOF <- data.frame(
+  SOFIndex = c ("Reduced Energy Level", "Inability to complete 5 chair rises", "Weight Loss"), 
+  Original = c ("Asked: Do you feel full of energy?", 
+                "Inability to complete 5 chair rises", 
+                "greater or equal to 5% weight loss over 2 years"), 
+  NHANES = c ("Some difficulty, much difficulty, or unable to do when responding to: difficulty walking from one room to the other on the same level.", 
+              "Some difficulty, much difficulty, or unable to do when responding to: by yourself, and without any special equipment, how much difficulty do you have standing from an armless straight chair?", 
+              "If participant had a 5% decrease between their self-reported weight one year ago and current self-reported weight, they were considered to have unintentional weight loss")
+)
+
+kbl(text_SOF) %>%
+  kable_paper(full_width = F) %>%
+  column_spec(1, bold = T, border_right = T) %>%
+  column_spec(2, width = "30em") %>% 
+  column_spec(3, width = "30cm")
+
+```
+
+## FRAIL Scale 
+
+```{r, echo = FALSE}
+text_FRAIL <- data.frame(
+  FRAILScale = c ("Fatigue", "Resistance", "Ambulation", "Illness", "Loss of Weight"), 
+  Original = c ("Asked: How much time during the previous 4 weeks did you feel tired? (All of the time, most of the time = 1 point)", 
+                "Asked: In the last 4 weeks by yourself and not using aids, do you have any difficulty walking up 10 steps without resting?", 
+                "Asked: In the last 4 weeks by yourself and not using aids do you have any difficulty walking 300 meters or one block?",
+                "Asked, Did your Doctor ever tell you that you have?
+                - Hypertension
+                - Diabetes 
+                - Cancer
+                - Chronic Lung Disease
+                - Heart Attack
+                - Angina 
+                - Asthma 
+                - Arthritis 
+                - Kidney Disease", 
+                "Asked: Have you lost more than 5 kg or 5% of your body weight in the past year?"), 
+  NHANES = c ("Some difficulty, much difficulty, or unable to do when responding to: difficulty walking from one room to the other on the same level.", 
+              "Some difficulty, much difficulty, or unable to do when responding to: how much difficulty do you have walking up ten steps without resting?", 
+              "Some difficulty, much difficulty, or unable to do when responding to: how much difficulty do you have walking for walking a quarter mile [that is about 2 or 3 blocks]?",
+              "Have 5 or more of the following illnesses: 
+              - Asthma, 
+              - Arthritis 
+              - Congestive heart failure 
+              - Coronary heart disease 
+              - Heart Attack 
+              - Stroke 
+              - Bronchitis 
+              - Liver Condition 
+              - Cancer 
+              - Thyroid Problems", 
+              "If participant had a 5% decrease between their self-reported weight one year ago and current self-reported weight, they were considered to have unintentional weight loss")
+
+)
+
+
+kbl(text_FRAIL) %>%
+  kable_paper(full_width = F) %>%
+  column_spec(1, bold = T, border_right = T) %>%
+  column_spec(2, width = "30em") %>% 
+  column_spec(3, width = "30cm")
+
+```
+
+
+## Frailty Index 
+
+```{r}
+text_FI<- data.frame(
+  FrailtyIndex = c ("Comorbidities", "Function", 
+                    "Signs/Symptoms", "Lab Values", 
+                    "Other"),
+  Variables = c ("Stroke,
+                 Thyroid Condition, 
+                 Cancer,
+                 Heart Attack, 
+                 Heart Disease,
+                 Ever had blood pressure,
+                 Angina/Angina Pectoris, 
+                 Osteoporosis,
+                 Diabetes,
+                 Arthritis,
+                 Ever broken hip,
+                 Weak/Failing Kidneys", 
+                 "Difficulty using fork and knife,
+                 Difficulty dressing yourself, 
+                 Difficulty getting in/out of bed,
+                 Difficulty standing up from armless chair,
+                 Difficulty managing money, 
+                 Difficulty preparing meals,
+                 Difficulty standing for long periods of time, 
+                 Difficulty stooping, crouching, kneeling,
+                 Difficulty grasping/holding small objects, 
+                 Difficulty push or pulling large objects,
+                 Difficulty attending social events", 
+                 "Heart rate at rest,
+                 Systolic blood pressure,
+                 Cough regularly, 
+                 Leaked/lost control or urine,
+                 General vision, 
+                 Difficulty seeing steps/curb in dim lights,
+                 General hearing, 
+                 Confusing or inability to remember things", 
+                 "Homocysteine (μmol/L),
+                 Folatc, scrum (nmol/L),
+                 Glycohemoglobin (%),
+                 Red blood cell count  (million cell/μL),
+                 Hemoglobin (g/dL), 
+                 Red cell distribution width (%), 
+                 Lymphocyte percent (%), 
+                 Segmented neutrophils percent (%)",
+                 "Medications,
+                 Self-reported health,
+                 Health compared to 1 year ago,
+                 Frequency of healthcare used,
+                 Overnight hospital stays"
+                 )
+  )
+
+kbl(text_FI) %>%
+  kable_paper(full_width = F) %>%
+  column_spec(1, bold = T, border_right = T) %>%
+  column_spec(2, width = "30em")
+```
+
+
+
+
+# General Characteristics 
+
+
 Phenotype Level 4 was combined with Level 3 as there was only 0.04% of people with Phenoype = 4
 SOF Index 2 & 3 were combined as Level 3 had 0.63 % of people 
 FRAIL SCALE 3, 4, 5 were combined: 3 (3.9%), 4 (0.6%), 5 (0.07%)
@@ -120,28 +275,423 @@ FI
 ```
 
 
+## Regressions 
+
+### Interactions 
+```{r, echo = FALSE}
+Interaction_3way <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~MVPA_hr*AGE*GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
+
+Interaction_3way
+
+Interaction_2way_PA_S <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~MVPA_hr*GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
+
+Interaction_2way_PA_S
+
+Interaction_2way_PA_A <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~MVPA_hr*AGE + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
+
+Interaction_2way_PA_A
+
+Interaction_2way_S_A <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~GENDER*AGE + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
+
+Interaction_2way_S_A
+
+
+```
 
 
 
+Three way interaction found in SOF Index - therefore, subgroup by sex 
+Two way interaction found with Phenotupe @ Sex and Age, subgroup by sex 
+```{r, include= FALSE}
+Interaction_2way_F <- 
+  (lm (cbind (SOF, Phenotype)~MVPA_hr*AGE + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Females ))
+Interaction_2way_F %>% 
+  summary 
+
+
+Interaction_2way_M <- 
+  (lm (cbind (SOF, Phenotype)~MVPA_hr*AGE + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Males ))
+Interaction_2way_M %>% 
+  summary 
+```
+
+
+Simple Slope SOF Females by AGE only 
+
+### Regressions without transformations, unadjusted 
+```{r, echo = FALSE}
+model_ALL_UN <-  
+lm(cbind(FRAIL_Scale, FI) ~ 
+     MVPA_hr + AGE + GENDER, 
+   na.action = "na.exclude",
+   data = Data) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+model_ALL_UN%>% 
+  DT::datatable()
+
+```
+
+#Phenotype - by Sex 
+```{r}
+model_Phen_UN_F <-  
+lm(cbind(Phenotype) ~ 
+     MVPA_hr + AGE, 
+   na.action = "na.exclude",
+   data = Females) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+model_Phen_UN_F%>% 
+  DT::datatable()
+
+model_Phen_UN_M<-  
+lm(cbind(Phenotype) ~ 
+     MVPA_hr + AGE, 
+   na.action = "na.exclude",
+   data = Males) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+model_Phen_UN_M%>% 
+  DT::datatable()
+```
+
+
+# Regression - SOF Males 
+```{r}
+model2 <-  
+lm(SOF ~ MVPA_hr + AGE, 
+   na.action = "na.exclude",
+   data = Males) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+model2 %>% 
+  DT::datatable()
+
+```
+
+
+#SOF Females 
+```{r}
+modelSOF_F_30 <-
+  lm (SOF~ MVPA_hr + Age30 + (Age30*MVPA_hr), 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_30  %>% 
+  DT::datatable()
+
+modelSOF_F_40 <-
+  lm (SOF~ MVPA_hr + Age40 + (Age40*MVPA_hr), 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_40  %>% 
+  DT::datatable()
+
+modelSOF_F_50 <-
+  lm (SOF~ MVPA_hr + Age50 + (Age50*MVPA_hr), 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_50  %>% 
+  DT::datatable()
+
+
+modelSOF_F_60 <-
+  lm (SOF~ MVPA_hr + Age50 + (Age50*MVPA_hr), 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_60  %>% 
+  DT::datatable()
+```
+
+## Fully Adjusted 
+```{r}
+model_ALL_AD<-  
+lm(cbind(FRAIL_Scale, FI) ~ 
+     MVPA_hr + AGE + GENDER + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+   na.action = "na.exclude",
+   data = Data) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+model_ALL_AD%>% 
+  DT::datatable()
+```
+
+## Phenotype, by Sex 
+```{r}
+model_Pheno_AD_F <-  
+lm(cbind(Phenotype) ~ 
+     MVPA_hr + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+   na.action = "na.exclude",
+   data = Females) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+model_Pheno_AD_F%>% 
+  DT::datatable()
+
+model_Pheno_AD_M <-  
+lm(cbind(Phenotype) ~ 
+     MVPA_hr + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+   na.action = "na.exclude",
+   data = Males) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+model_Pheno_AD_M%>% 
+  DT::datatable()
+```
 
 
 
+## SOF Males 
+```{r}
+SOF_M_AD <-  
+lm(SOF ~ MVPA_hr + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+   na.action = "na.exclude",
+   data = Males) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+SOF_M_AD %>% 
+  DT::datatable()
+```
 
 
+## SOF Females - by Age 
+```{r}
+modelSOF_F_30_AD <-
+  lm (SOF~ MVPA_hr + Age30 + (Age30*MVPA_hr) + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_30_AD  %>% 
+  DT::datatable()
+
+modelSOF_F_40_AD <-
+  lm (SOF~ MVPA_hr + Age40 + (Age40*MVPA_hr) + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_40_AD  %>% 
+  DT::datatable()
+
+modelSOF_F_50_AD <-
+  lm (SOF~ MVPA_hr + Age50 + (Age50*MVPA_hr)+ RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_50_AD  %>% 
+  DT::datatable()
 
 
+modelSOF_F_60_AD <-
+  lm (SOF~ MVPA_hr + Age50 + (Age50*MVPA_hr)+ RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_60_AD  %>% 
+  DT::datatable()
+```
 
 
+#Physical Activity Transformations 
+```{r, include = FALSE}
+skewness(Data$MVPA_hr)
+
+#SQR 
+Data$sq_MVPA <- sqrt(Data$MVPA_hr)
+
+skewness (Data$sq_MVPA)
+
+#log 10
+Males$log_MVPA <- log10(Males$MVPA_hr)
+
+skewness(Data$log_MVPA)
+
+View (df)
+
+# USE LOG 
+Males$MVPA_hr [Males$MVPA_hr == 0] <- 0.00001
+
+```
+
+# Regressions Using Log MVPA
+```{r}
+model_ALL_UN_log <-  
+lm(cbind(FRAIL_Scale, FI) ~ 
+     log_MVPA + AGE + GENDER, 
+   na.action = "na.exclude",
+   data = Data) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+model_ALL_UN_log%>% 
+  DT::datatable()
 
 
+model_ALL_AD_log <-  
+lm(cbind(FRAIL_Scale, FI) ~ 
+     log_MVPA + AGE + GENDER + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+   na.action = "na.exclude",
+   data = Data) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+model_ALL_AD_log%>% 
+  DT::datatable()
+```
+
+# Phenotype, by Sex 
+```{r}
+model_Pheno_AD_log_F <-  
+lm(cbind(Phenotype) ~ 
+     log_MVPA + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+   na.action = "na.exclude",
+   data = Females) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+model_Pheno_AD_log_F%>% 
+  DT::datatable()
+
+model_Pheno_AD_log_M <-  
+lm(cbind(Phenotype) ~ 
+     log_MVPA + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+   na.action = "na.exclude",
+   data = Males) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+model_Pheno_AD_log_M%>% 
+  DT::datatable()
+```
+
+# SOF Males - Log MVPA 
+
+```{r}
+SOF_M_UN_log <-  
+lm(SOF ~ MVPA_hr + AGE, 
+   na.action = "na.exclude",
+   data = Males) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+SOF_M_UN_log %>% 
+  DT::datatable()
 
 
+SOF_M_AD_log <-  
+lm(SOF ~ MVPA_hr + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
+   na.action = "na.exclude",
+   data = Males) %>% 
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+SOF_M_AD_log %>% 
+  DT::datatable()
+```
 
 
+# SOF Females - Log MVPA 
+
+```{r}
+modelSOF_F_30_log <-
+  lm (SOF~ log_MVPA + Age30 + (Age30*log_MVPA), 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_30_log %>% 
+  DT::datatable()
+
+modelSOF_F_40_log <-
+  lm (SOF~ log_MVPA + Age40 + (Age40*log_MVPA), 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_40_log  %>% 
+  DT::datatable()
+
+modelSOF_F_50_log <-
+  lm (SOF~ log_MVPA + Age50 + (Age50*log_MVPA), 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_50_log %>% 
+  DT::datatable()
 
 
+modelSOF_F_60_log <-
+  lm (SOF~ log_MVPA+ Age50 + (Age50*log_MVPA), 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_60_log  %>% 
+  DT::datatable()
+```
 
 
+## Interactions for Meet MVPA guide (Y/N) 
+
+```{r}
+Interaction_3way_YN <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~MeetGuide*AGE*GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
+
+Interaction_3way
+
+Interaction_2way_YN_PA_A <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI)~MeetGuide*AGE+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
+
+Interaction_2way_YN_PA_A
+
+Interaction_2way_YN_PA_S <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI)~MeetGuide*GENDER+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
+
+Interaction_2way_YN_PA_S
+
+Interaction_2way_YN_A_S <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI)~AGE*GENDER+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
+
+Interaction_2way_YN_A_S
+```
+
+# Three-way interaction for SOF Index 
+# Two-way interaction for Phenotype (MVPA/AGE) & (AGE/SEX )
 
 
 
