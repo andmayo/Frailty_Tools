@@ -2,7 +2,9 @@
 title: "Frailty Tools"
 author: "Andrea"
 date: "22/10/2021"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 ## Intro 
 This document explores how physical activity estimates differ based on which frailty tool is used 
@@ -14,10 +16,13 @@ knitr::opts_chunk$set(echo = T, message = F, warning = F)
 ```
 
 # Total Sample
-```{r, echo=FALSE}
+```{r, echo = FALSE}
 Data <- read_csv("C:/Users/andre/OneDrive/Documents/Documents/PhD Degree/Projects/Comparing Frailty Tools/Frailty_Tools/FrailtyTools.csv")
 write.csv(Data,"C:/Users/andre/OneDrive/Documents/Documents/PhD Degree/Projects/Comparing Frailty Tools/Frailty_Tools/FrailtyTools.csv", row.names = FALSE)
 datatable(Data)
+
+Females <- subset(Data, Data$GENDER == "Female")
+Males <- subset (Data, Data$GENDER == "Males")
 ```
 
 # Describe Differences between NHANES Frailty Tools and Original Tool
@@ -112,7 +117,7 @@ kbl(text_FRAIL) %>%
 
 ## Frailty Index 
 
-```{r}
+```{r, echo = FALSE}
 text_FI<- data.frame(
   FrailtyIndex = c ("Comorbidities", "Function", 
                     "Signs/Symptoms", "Lab Values", 
@@ -278,7 +283,7 @@ FI
 ## Regressions 
 
 ### Interactions 
-```{r, echo = FALSE}
+```{r, include = FALSE}
 Interaction_3way <- 
   (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~MVPA_hr*AGE*GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
 
@@ -309,13 +314,13 @@ Two way interaction found with Phenotupe @ Sex and Age, subgroup by sex
 ```{r, include= FALSE}
 Interaction_2way_F <- 
   (lm (cbind (SOF, Phenotype)~MVPA_hr*AGE + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Females ))
-Interaction_2way_F %>% 
+#Interaction_2way_F %>% 
   summary 
 
 
-Interaction_2way_M <- 
+#Interaction_2way_M <- 
   (lm (cbind (SOF, Phenotype)~MVPA_hr*AGE + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Males ))
-Interaction_2way_M %>% 
+#Interaction_2way_M %>% 
   summary 
 ```
 
@@ -338,7 +343,7 @@ model_ALL_UN%>%
 ```
 
 #Phenotype - by Sex 
-```{r}
+```{r, include = FALSE}
 model_Phen_UN_F <-  
 lm(cbind(Phenotype) ~ 
      MVPA_hr + AGE, 
@@ -364,7 +369,7 @@ model_Phen_UN_M%>%
 
 
 # Regression - SOF Males 
-```{r}
+```{r, include = FALSE}
 model2 <-  
 lm(SOF ~ MVPA_hr + AGE, 
    na.action = "na.exclude",
@@ -379,7 +384,7 @@ model2 %>%
 
 
 #SOF Females 
-```{r}
+```{r, include = FALSE}
 modelSOF_F_30 <-
   lm (SOF~ MVPA_hr + Age30 + (Age30*MVPA_hr), 
       na.action = "na.exclude",
@@ -423,7 +428,7 @@ modelSOF_F_60  %>%
 ```
 
 ## Fully Adjusted 
-```{r}
+```{r, include = FALSE}
 model_ALL_AD<-  
 lm(cbind(FRAIL_Scale, FI) ~ 
      MVPA_hr + AGE + GENDER + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
@@ -437,7 +442,7 @@ model_ALL_AD%>%
 ```
 
 ## Phenotype, by Sex 
-```{r}
+```{r, include = FALSE}
 model_Pheno_AD_F <-  
 lm(cbind(Phenotype) ~ 
      MVPA_hr + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
@@ -464,7 +469,7 @@ model_Pheno_AD_M%>%
 
 
 ## SOF Males 
-```{r}
+```{r, include=FALSE}
 SOF_M_AD <-  
 lm(SOF ~ MVPA_hr + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
    na.action = "na.exclude",
@@ -478,7 +483,7 @@ SOF_M_AD %>%
 
 
 ## SOF Females - by Age 
-```{r}
+```{r, include = FALSE}
 modelSOF_F_30_AD <-
   lm (SOF~ MVPA_hr + Age30 + (Age30*MVPA_hr) + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
       na.action = "na.exclude",
@@ -544,7 +549,7 @@ Males$MVPA_hr [Males$MVPA_hr == 0] <- 0.00001
 ```
 
 # Regressions Using Log MVPA
-```{r}
+```{r, include = FALSE}
 model_ALL_UN_log <-  
 lm(cbind(FRAIL_Scale, FI) ~ 
      log_MVPA + AGE + GENDER, 
@@ -570,7 +575,7 @@ model_ALL_AD_log%>%
 ```
 
 # Phenotype, by Sex 
-```{r}
+```{r, include = FALSE}
 model_Pheno_AD_log_F <-  
 lm(cbind(Phenotype) ~ 
      log_MVPA + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
@@ -596,7 +601,7 @@ model_Pheno_AD_log_M%>%
 
 # SOF Males - Log MVPA 
 
-```{r}
+```{r, include= FALSE}
 SOF_M_UN_log <-  
 lm(SOF ~ MVPA_hr + AGE, 
    na.action = "na.exclude",
@@ -622,7 +627,7 @@ SOF_M_AD_log %>%
 
 # SOF Females - Log MVPA 
 
-```{r}
+```{r, include = FALSE}
 modelSOF_F_30_log <-
   lm (SOF~ log_MVPA + Age30 + (Age30*log_MVPA), 
       na.action = "na.exclude",
@@ -668,7 +673,7 @@ modelSOF_F_60_log  %>%
 
 ## Interactions for Meet MVPA guide (Y/N) 
 
-```{r}
+```{r, include = FALSE}
 Interaction_3way_YN <- 
   (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~MeetGuide*AGE*GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
 
@@ -691,7 +696,7 @@ Interaction_2way_YN_A_S
 ```
 
 # Three-way interaction for SOF Index 
-# Two-way interaction for Phenotype (MVPA/AGE) & (AGE/SEX )
+# Two-way interaction for Phenotype (MVPA/AGE) & (AGE/SEX)
 
 
 
