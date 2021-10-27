@@ -11,7 +11,7 @@ This document explores how physical activity estimates differ based on which fra
 
 ```{r setup, include=FALSE}
 
-pacman::p_load(dplyr, tidyr, readr, ggplot2, DT, qwraps2, kableExtra, broom)
+pacman::p_load(dplyr, tidyr, readr, ggplot2, DT, qwraps2, kableExtra, broom, pander)
 knitr::opts_chunk$set(echo = T, message = F, warning = F)
 ```
 
@@ -240,7 +240,18 @@ GC_Data <-
               "max:"       = ~ max(TotalMVPA),
               "mean (sd):" = ~ qwraps2::mean_sd(TotalMVPA, denote_sd = "paren"))
        )
-summary_table(Data, GC_Data) 
+Table <- summary_table(Data, GC_Data) 
+Table
+
+dftodocx <- function(Table) {
+  require(dplyr)
+  require(pander)
+  Table %>% 
+  pander::pandoc.table.return() %>%
+  pander::Pandoc.convert(text = ., format= "docx", footer = F)
+}
+
+dftodocx(Table)
 ```
 
 # Average Amount of Time spent in MVPA by Frailty Tool 
@@ -273,54 +284,45 @@ FRAIL
 ```{r, echo = FALSE, results='asis'}
 Data <- 
   Data %>% 
-  mutate (fi_group = cut(FI, breaks = c(0, 0.2, 0.3, 0.4, 0.5, 1)))
+  mutate (fi_group = cut(FI, breaks = c(0, 0.2, 0.3, 0.4, 1)))
 
 FI <- summary_table(dplyr::group_by(Data, fi_group), Frailty_tools)
 FI
 ```
 
-
-## Regressions 
-
 ### Interactions 
-```{r, include = FALSE}
+```{r, echo = FALSE}
 Interaction_3way <- 
-  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~MVPA_hr*AGE*GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
-
+  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~log_MVPA*AGE*GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
 Interaction_3way
 
 Interaction_2way_PA_S <- 
-  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~MVPA_hr*GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
-
+  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~log_MVPA*GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
 Interaction_2way_PA_S
 
 Interaction_2way_PA_A <- 
-  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~MVPA_hr*AGE + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
-
+  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~log_MVPA*AGE + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
 Interaction_2way_PA_A
 
 Interaction_2way_S_A <- 
   (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~GENDER*AGE + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
-
 Interaction_2way_S_A
-
-
 ```
 
 
 
 Three way interaction found in SOF Index - therefore, subgroup by sex 
 Two way interaction found with Phenotupe @ Sex and Age, subgroup by sex 
+
 ```{r, include= FALSE}
 Interaction_2way_F <- 
   (lm (cbind (SOF, Phenotype)~MVPA_hr*AGE + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Females ))
-#Interaction_2way_F %>% 
+Interaction_2way_F %>% 
   summary 
 
-
-#Interaction_2way_M <- 
+Interaction_2way_M <- 
   (lm (cbind (SOF, Phenotype)~MVPA_hr*AGE + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Males ))
-#Interaction_2way_M %>% 
+Interaction_2way_M %>% 
   summary 
 ```
 
@@ -346,7 +348,7 @@ model_ALL_UN%>%
 ```{r, include = FALSE}
 model_Phen_UN_F <-  
 lm(cbind(Phenotype) ~ 
-     MVPA_hr + AGE, 
+     log_MVPA + AGE, 
    na.action = "na.exclude",
    data = Females) %>% 
   broom::tidy(conf.int = T) %>% 
@@ -354,7 +356,9 @@ lm(cbind(Phenotype) ~
 
 model_Phen_UN_F%>% 
   DT::datatable()
+```
 
+```{r, include = FALSE}
 model_Phen_UN_M<-  
 lm(cbind(Phenotype) ~ 
      MVPA_hr + AGE, 
@@ -524,6 +528,16 @@ modelSOF_F_60_AD <-
 
 modelSOF_F_60_AD  %>% 
   DT::datatable()
+
+modelSOF_F_70_AD <-
+  lm (SOF~ MVPA_hr + Age70 + (Age70*MVPA_hr), 
+      na.action = "na.exclude",
+      data = Females) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+modelSOF_F_70_AD  %>% 
+  DT::datatable()
 ```
 
 
@@ -545,131 +559,34 @@ View (df)
 
 # USE LOG 
 Males$MVPA_hr [Males$MVPA_hr == 0] <- 0.00001
-
+View (Females)
 ```
 
 # Regressions Using Log MVPA
-```{r, include = FALSE}
-model_ALL_UN_log <-  
-lm(cbind(FRAIL_Scale, FI) ~ 
-     log_MVPA + AGE + GENDER, 
-   na.action = "na.exclude",
-   data = Data) %>% 
-  broom::tidy(conf.int = T) %>% 
-  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
-
-model_ALL_UN_log%>% 
-  DT::datatable()
-
-
-model_ALL_AD_log <-  
-lm(cbind(FRAIL_Scale, FI) ~ 
-     log_MVPA + AGE + GENDER + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
-   na.action = "na.exclude",
-   data = Data) %>% 
-  broom::tidy(conf.int = T) %>% 
-  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
-
-model_ALL_AD_log%>% 
-  DT::datatable()
-```
-
-# Phenotype, by Sex 
-```{r, include = FALSE}
-model_Pheno_AD_log_F <-  
-lm(cbind(Phenotype) ~ 
-     log_MVPA + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
-   na.action = "na.exclude",
-   data = Females) %>% 
-  broom::tidy(conf.int = T) %>% 
-  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
-
-model_Pheno_AD_log_F%>% 
-  DT::datatable()
-
-model_Pheno_AD_log_M <-  
-lm(cbind(Phenotype) ~ 
-     log_MVPA + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
-   na.action = "na.exclude",
-   data = Males) %>% 
-  broom::tidy(conf.int = T) %>% 
-  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
-
-model_Pheno_AD_log_M%>% 
-  DT::datatable()
-```
-
-# SOF Males - Log MVPA 
-
-```{r, include= FALSE}
-SOF_M_UN_log <-  
-lm(SOF ~ MVPA_hr + AGE, 
-   na.action = "na.exclude",
-   data = Males) %>% 
-  broom::tidy(conf.int = T) %>% 
-  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
-
-SOF_M_UN_log %>% 
-  DT::datatable()
-
-
-SOF_M_AD_log <-  
-lm(SOF ~ MVPA_hr + AGE + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear, 
-   na.action = "na.exclude",
-   data = Males) %>% 
-  broom::tidy(conf.int = T) %>% 
-  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
-
-SOF_M_AD_log %>% 
-  DT::datatable()
-```
-
-
-# SOF Females - Log MVPA 
-
-```{r, include = FALSE}
-modelSOF_F_30_log <-
-  lm (SOF~ log_MVPA + Age30 + (Age30*log_MVPA), 
+# Simple slope by AGE (30)
+```{r}
+Tools_70_UN <-
+  lm (cbind(Phenotype, SOF, FRAIL_Scale, FI)~ log_MVPA + Age70 + (Age70*log_MVPA) + GENDER,
       na.action = "na.exclude",
-      data = Females) %>%
+      data = Data) %>%
   broom::tidy(conf.int = T) %>% 
   mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
 
-modelSOF_F_30_log %>% 
+Tools_70_UN %>% 
   DT::datatable()
 
-modelSOF_F_40_log <-
-  lm (SOF~ log_MVPA + Age40 + (Age40*log_MVPA), 
+Tools_70_AD <-
+  lm (cbind(Phenotype, SOF, FRAIL_Scale, FI)~ log_MVPA + Age70 + (Age70*log_MVPA) + GENDER + RACE + EDUCATION + MARITAL_STATUS + CYCLE + Wear,
       na.action = "na.exclude",
-      data = Females) %>%
+      data = Data) %>%
   broom::tidy(conf.int = T) %>% 
   mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
 
-modelSOF_F_40_log  %>% 
+Tools_70_AD %>% 
   DT::datatable()
 
-modelSOF_F_50_log <-
-  lm (SOF~ log_MVPA + Age50 + (Age50*log_MVPA), 
-      na.action = "na.exclude",
-      data = Females) %>%
-  broom::tidy(conf.int = T) %>% 
-  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
-
-modelSOF_F_50_log %>% 
-  DT::datatable()
-
-
-modelSOF_F_60_log <-
-  lm (SOF~ log_MVPA+ Age50 + (Age50*log_MVPA), 
-      na.action = "na.exclude",
-      data = Females) %>%
-  broom::tidy(conf.int = T) %>% 
-  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
-
-modelSOF_F_60_log  %>% 
-  DT::datatable()
+View (Females)
 ```
-
 
 ## Interactions for Meet MVPA guide (Y/N) 
 
@@ -680,23 +597,392 @@ Interaction_3way_YN <-
 Interaction_3way
 
 Interaction_2way_YN_PA_A <- 
-  (lm (cbind (Phenotype, FRAIL_Scale, FI)~MeetGuide*AGE+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI, SOF)~MeetGuide*AGE+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
 
 Interaction_2way_YN_PA_A
 
 Interaction_2way_YN_PA_S <- 
-  (lm (cbind (Phenotype, FRAIL_Scale, FI)~MeetGuide*GENDER+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI, SOF)~MeetGuide*GENDER+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
 
 Interaction_2way_YN_PA_S
 
 Interaction_2way_YN_A_S <- 
-  (lm (cbind (Phenotype, FRAIL_Scale, FI)~AGE*GENDER+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI, SOF)~AGE*GENDER+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data )) %>% summary 
 
 Interaction_2way_YN_A_S
+
+View (Data)
 ```
 
-# Three-way interaction for SOF Index 
-# Two-way interaction for Phenotype (MVPA/AGE) & (AGE/SEX)
+
+# Regression for FRAIL Scale, SOF, and FI 
+
+```{r}
+Tools_Meet_Un <-
+  lm (cbind(SOF, FRAIL_Scale, FI)~ MeetGuide+ AGE + GENDER,
+      na.action = "na.exclude",
+      data = Data) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+Tools_Meet_Un %>% 
+  DT::datatable()
+
+Tools_Meet_AD <-
+  lm (cbind(SOF, FRAIL_Scale, FI)~ MeetGuide+ AGE + GENDER+  RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear,
+      na.action = "na.exclude",
+      data = Data) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+Tools_Meet_AD %>% 
+  DT::datatable()
+
+```
+
+Phenotype- by AGE 
+```{r}
+PT_AGE_Un <-
+  lm (Phenotype~ MeetGuide+ Age70 + (MeetGuide*Age70) + GENDER,
+      na.action = "na.exclude",
+      data = Data) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+PT_AGE_Un%>% 
+  DT::datatable()
+
+
+PT_AGE_AD <-
+  lm (Phenotype~ MeetGuide+ Age70 + (MeetGuide*Age70) + GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear,
+      na.action = "na.exclude",
+      data = Data) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+PT_AGE_AD%>% 
+  DT::datatable()
+```
+
+
+# With those 50 plus 
+
+```{r}
+Data_50 <- subset (Data, Data$AGE >= 50)
+View (Data_50)
+
+Interaction_3way_50 <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~log_MVPA*AGE*GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data_50)) %>% summary 
+
+Interaction_3way_50
+
+Interaction_2way_P_A_50 <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI, SOF)~log_MVPA*AGE+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data_50 )) %>% summary 
+
+Interaction_2way_P_A_50
+
+Interaction_2way_PA_S_50 <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI, SOF)~log_MVPA*GENDER+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data_50 )) %>% summary 
+
+Interaction_2way_PA_S_50
+
+Interaction_2way_A_S_50 <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI, SOF)~AGE*GENDER+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data_50 )) %>% summary 
+
+Interaction_2way_A_S_50
+
+View (Data)
+```
+
+# Y/N 50 + Interactions 
+```{r}
+Interaction_3way_YN_50 <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, SOF, FI)~MeetGuide*AGE*GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data_50)) %>% summary 
+
+Interaction_3way_YN_50
+
+Interaction_2way_P_A_50_YN <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI, SOF)~MeetGuide*AGE+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data_50 )) %>% summary 
+
+Interaction_2way_P_A_50_YN
+
+Interaction_2way_PA_S_50_YN <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI, SOF)~MeetGuide*GENDER+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data_50 )) %>% summary 
+
+Interaction_2way_PA_S_50_YN
+
+Interaction_2way_A_S_50 <- 
+  (lm (cbind (Phenotype, FRAIL_Scale, FI, SOF)~AGE*GENDER+ RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear, data = Data_50 )) %>% summary 
+
+Interaction_2way_A_S_50
+```
+
+
+#Regressions for 50 + 
+```{r}
+Tools_50_UN_YN <-
+  lm (cbind(Phenotype, SOF, FRAIL_Scale, FI)~ MeetGuide + AGE + GENDER,
+      na.action = "na.exclude",
+      data = Data_50) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+Tools_50_UN_YN%>% 
+  DT::datatable()
+
+
+Tools_50_AD_YN <-
+  lm (cbind (Phenotype, SOF, FRAIL_Scale, FI) ~ MeetGuide + AGE + GENDER + RACE + EDUCATION + MARITAL_STATUS+ CYCLE + Wear,
+      na.action = "na.exclude",
+      data = Data_50) %>%
+  broom::tidy(conf.int = T) %>% 
+  mutate_if(is.numeric, ~formatC(., digits = 4, format = "f"))
+
+Tools_50_AD_YN%>% 
+  DT::datatable()
+```
+
+# MERGE Frailty Tools 
+```{r}
+FI <- read.csv(file.choose(), header = TRUE)
+SOF <- read.csv(file.choose (), header = TRUE)
+Phenotype <- read.csv(file.choose (), header = TRUE)
+
+# FI 
+View (FI)
+FI <- 
+  FI %>% 
+  rename (SEQN = ï..seqn)
+
+FI$fifinal [FI$fifinal == "#NULL!"] <- NA
+
+FI <- 
+  FI %>% 
+  select (SEQN, fifinal)
+
+View (FI)
+
+# SOF 
+View(SOF)
+SOF_FI <- merge (SOF, FI, by = "SEQN")
+View (SOF_FI)
+
+#Phenotype 
+View (Phenotype)
+Tools <- merge (SOF_FI, Phenotype, by = "SEQN")
+
+
+Tools <- 
+  Tools %>% 
+  drop_na (fifinal, SOF)
+
+Tools_2 <- 
+  Tools %>% 
+  select (SEQN, fifinal, SOF, PF)
+
+Tools_PA <- merge (D_SR, Tools_2, by = "SEQN")
+View (Tools_PA)
+```
+
+###### 
+# Rebuild FRAIL Scale
+```{r}
+# Fatigue - Used the same measure that was used in other scales 
+View (Phenotype)
+FRAIL_Exhaust <- 
+  Phenotype %>% 
+  select (SEQN, Ex_Phenotype)
+
+# Resistance and Ambulation 
+# 2004 cycle
+PF_04 <- read.csv(file.choose(), header = TRUE)
+FRAIL_Resistance_04 <-
+  PF_04 %>% 
+  select (SEQN, PFQ061C, PFQ061B) %>% 
+  rename (Steps = PFQ061C, 
+          Quater_Block = PFQ061B) # Checked numbers - match NHANES 
+View (FRAIL_Resistance_04)
+
+FRAIL_Resistance_04 %>% 
+  count (Steps)
+
+#2006 Cycle 
+PF_06 <- read.csv(file.choose (), header = TRUE)
+FRAIL_Resistance_06 <-
+  PF_06 %>% 
+  select (SEQN, PFQ061C, PFQ061B) %>% 
+  rename (Steps = PFQ061C, 
+          Quater_Block = PFQ061B) # Checked with NHANES, same Ns 
+
+
+FRAIL_Resistance_06 %>% 
+  count (Steps)
+
+# Merge both cycles 
+FRAIL_R_A <- rbind (FRAIL_Resistance_04, FRAIL_Resistance_06)
+
+FRAIL_R_A$Steps<- ifelse (FRAIL_R_A$Steps== 1, 0, 
+                          ifelse (FRAIL_R_A$Steps == 2, 1, 
+                                  ifelse (FRAIL_R_A$Steps == 3, 1, 
+                                          ifelse (FRAIL_R_A == 4, 1, NA))))
+
+FRAIL_R_A$Quater_Block <-ifelse (FRAIL_R_A$Quater_Block == 1, 0, 
+                                 ifelse (FRAIL_R_A$Quater_Block == 2, 1, 
+                                         ifelse (FRAIL_R_A$Quater_Block == 3, 1, 
+                                                 ifelse (FRAIL_R_A$Quater_Block == 4, 1, NA))))
+FRAIL_R_A %>% 
+  count (Quater_Block)
+
+# Weight loss of 5% 
+
+View (SOF_NAcut)
+
+FRAIL_weight <- 
+  SOF %>% 
+  select (SEQN, Index_Weight)
+
+View (FRAIL_weight)
+
+#Number of Chronic Dieases 
+MC_04 <- read.csv(file.choose(), header = TRUE)
+MC_06 <- read.csv (file.choose (), header = TRUE)
+
+MC04 <- 
+  MC_04 %>% 
+  select (SEQN, MCQ035, MCQ160A, MCQ160B, MCQ160C, MCQ160E,
+          MCQ160F, MCQ170K, MCQ170L, MCQ220, MCQ170M) %>% 
+  rename (Asthma = MCQ035, 
+          Arthritis = MCQ160A, 
+          CHF = MCQ160B, 
+          CHD = MCQ160C, 
+          Heart_Attack = MCQ160E, 
+          Stroke = MCQ160F, 
+          Bronchitis = MCQ170K, 
+          Liver_Condition = MCQ170L,
+          Cancer = MCQ220, 
+          Thyriod = MCQ170M)
+MC06 <- 
+  MC_06 %>% 
+  select (SEQN, MCQ035, MCQ160A, MCQ160B, MCQ160C, MCQ160E,
+          MCQ160F, MCQ170K, MCQ170L, MCQ220, MCQ170M) %>% 
+  rename (Asthma = MCQ035,  
+          Arthritis = MCQ160A, 
+          CHF = MCQ160B, 
+          CHD = MCQ160C, 
+          Heart_Attack = MCQ160E, 
+          Stroke = MCQ160F, 
+          Bronchitis = MCQ170K, 
+          Liver_Condition = MCQ170L,
+          Cancer = MCQ220, 
+          Thyriod = MCQ170M)
+
+
+View (MC06)
+
+# Merge Data 
+MC <- rbind (MC04, MC06)
+names (MC)
+View (MC)
+MC %>% 
+  count (Asthma)
+
+MC$Thyriod[is.na (MC$Thyriod)] <- 0
+MC$Thyriod <- ifelse (MC$Thyriod== 1, 1, 0)
+
+MC$MC<- (MC$Arthritis +
+           MC$Asthma + 
+           MC$CHD +
+           MC$CHF + 
+           MC$Heart_Attack + 
+           MC$Stroke + 
+           MC$Bronchitis + 
+           MC$Liver_Condition + 
+           MC$Cancer + 
+           MC$Thyriod)
+
+
+MC %>% 
+  count (MC)
+View (MC)
+
+MC$FRAIL_MC <- ifelse (MC$MC >= 5, 1, 0)
+
+# Make FRAIL Scale 
+
+FS1 <- merge (FRAIL_weight, FRAIL_R_A, by = "SEQN")
+View (FS1)
+FS2 <- merge (FS1, FRAIL_Exhaust, by = "SEQN")
+FRAIL_SCALE <- merge (FS2, MC, by = "SEQN")
+View (FRAIL_SCALE)
+
+names (FRAIL_SCALE)
+
+FRAIL <- 
+  FRAIL_SCALE %>% 
+  select (SEQN, Index_Weight, Steps, Quater_Block, Ex_Phenotype, FRAIL_MC) %>% 
+  rename (FRAIL_weight = Index_Weight, 
+          FRAIL_steps = Steps, 
+          FRAIL_block = Quater_Block, 
+          FRAIL_ex = Ex_Phenotype, 
+          FRAIL_chronic = FRAIL_MC) %>% 
+  drop_na (FRAIL_block, 
+           FRAIL_ex, 
+           FRAIL_weight, 
+           FRAIL_chronic, 
+           FRAIL_steps)
+View (FRAIL)
+
+FRAIL$FRAIL_Scale <- (FRAIL$FRAIL_block + FRAIL$FRAIL_weight + FRAIL$FRAIL_steps + FRAIL$FRAIL_ex + FRAIL$FRAIL_chronic)
+FRAIL %>% 
+  count (FRAIL_Scale)
+FT <- merge (Frailty_Tools, FRAIL, by = "SEQN")
+
+View (FT)
+write.csv(SOF, "C:/Users/andre/OneDrive/Documents/Documents/PhD Degree/Projects/Comparing Frailty Tools//FRAILScale.csv", row.names = TRUE)
+```
+
+# Demo
+```{r}
+demo_04 <- read.csv(file.choose(), header= TRUE)
+View (demo_04)
+
+demo <- 
+  demo_04 %>% 
+  select (SEQN, SEX, AGE, RACE, EDUCATION, MARITAL, CYCLE, fifinal, MVPA)
+
+Demo<- subset(demo, demo$CYCLE > 2)
+View (Demo)
+
+Demo_SOF <- merge (Demo, SOF, by = "SEQN", all = TRUE)
+Demo_PT <- merge (Demo_SOF, Phenotype, by = "SEQN", all = TRUE)
+DB <- merge (Demo_PT, FRAIL, by = "SEQN", all = TRUE)
+```
+
+
+#Make Data for all Tools 
+```{r}
+View (DB)
+
+DB <- 
+  DB %>% 
+  drop_na (AGE)
+```
+
+
+```{r}
+
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
